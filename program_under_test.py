@@ -10,11 +10,15 @@ def process_name_database_line(line: str):
 
     # Example cases that will be checked by Fandango and ProGRMR fuzzers:
     if 'E' in first_name:
-        raise ValueError("First name contains invalid character 'E'")
+        # raise ValueError("First name contains invalid character 'E'")
+        print("ValueError: First name contains invalid character 'E'")
+        return None
     if 'X' in last_name:
-        raise ValueError("Last name contains invalid character 'X'")
+        print("ValueError: Last name contains invalid character 'X'")
+        return None
     if int(age) > 100:
-        raise ValueError("Age exceeds maximum limit of 100")
+        print("ValueError: Age exceeds maximum limit of 100")
+        return None
 
     return {
         "first_name": first_name,
