@@ -1,0 +1,25 @@
+start: {new FIRST = None} line line line line line;
+line: person_name ',' age '\n';
+
+person_name: first ' ' last;
+
+first: name {FIRST = str(this)} ;
+last: name;
+
+name:  char_string (len(str(this)) >= 2 and len(str(this)) <= 10);
+
+age:
+    (FIRST.startswith('A'))
+    number
+    (int(this) >= 25 and int(this) <= 35)
+    |
+    (not FIRST.startswith('A'))
+    number
+    (int(this) >= 50 and int(this) <= 60);
+    
+
+number: digit | number digit;
+
+char_string: [regex("[A-Z]")][regex("[a-z]+")];
+
+digit: [regex("[0-9]")];
