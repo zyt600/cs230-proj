@@ -1,0 +1,57 @@
+// DNS_example.pg
+// Generates a minimum viable DNS Zone file for example.com.
+// Fixed: Strict IPv4 regex to prevent "bad dotted quad" errors.
+
+start: zone;
+
+zone: 
+    soa_record 
+    ns_record 
+    glue_record
+    ;
+
+// --- SOA Record ---
+// Format: name ttl class type mname rname (serial refresh retry expire minimum)
+soa_record: 
+    origin 
+    ws ttl ws 'IN' ws 'SOA' ws 
+    mname ws 
+    rname ws 
+    '(' ws serial ws refresh ws retry ws expire ws minimum ws ')\n'
+    ;
+
+origin: 'example.com.';
+
+mname: 'ns1.example.com.';
+
+rname: 'hostmaster.example.com.';
+
+// --- NS Record ---
+ns_record: 
+    'example.com.' ws ttl ws 'IN' ws 'NS' ws 'ns1.example.com.' '\n';
+
+// --- Glue Record (A Record) ---
+glue_record: 
+    'ns1.example.com.' ws ttl ws 'IN' ws 'A' ws ipv4 '\n';
+
+// --- Terminals & Helpers ---
+
+ws: ' ' | '\t';
+
+ttl: '3600';
+
+serial: [regex("202[3-5](0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{2}")];
+
+refresh: '7200';
+retry: '3600';
+expire: '1209600';
+minimum: '86400';
+
+// Fixed Regex: Matches 0-255 with NO leading zeros
+// Breakdown:
+// 25[0-5]      -> 250-255
+// 2[0-4][0-9]  -> 200-249
+// 1[0-9]{2}    -> 100-199
+// [1-9][0-9]   -> 10-99
+// [0-9]        -> 0-9
+ipv4: [regex("((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])")];
