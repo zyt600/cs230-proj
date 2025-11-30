@@ -3,8 +3,9 @@ import subprocess
 import tempfile
 import sys
 
-BIND_IMAGE = "bind"
+BIND_IMAGE = "ubuntu/bind9:latest"
 ORIGIN = "example.com"
+
 
 def bind_test_harness(zone_text: str) -> bool:
     with tempfile.NamedTemporaryFile("w", delete=False, suffix=".zone") as f:
@@ -14,10 +15,15 @@ def bind_test_harness(zone_text: str) -> bool:
 
     try:
         command = [
-            "docker", "run", "--rm",
-            "-v", f"{zone_file_path}:/zone.zone:ro",
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{zone_file_path}:/zone.zone:ro",
             BIND_IMAGE,
-            "named-checkzone", ORIGIN, "/zone.zone"
+            "named-checkzone",
+            ORIGIN,
+            "/zone.zone",
         ]
 
         os.makedirs("logs", exist_ok=True)
@@ -36,8 +42,8 @@ def bind_test_harness(zone_text: str) -> bool:
     finally:
         os.remove(zone_file_path)
 
-def main():
 
+def main():
     # Read entire zone file text from STDIN
     zone_text = sys.stdin.read()
 
@@ -51,3 +57,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
