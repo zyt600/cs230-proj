@@ -1,0 +1,73 @@
+start:
+    { new ZONE = None; new RR = set(); new NUM_ZONE_LABELS = None } // the ZONE variable contains the zone name
+    zone
+    ( len(RR) <= 4 ); // limit the total number of resource records to less than or equal to 4
+
+zone:
+    ttl_declaration '\n' soa_record '\n' ns_record '\n' resource_records;
+
+ttl_declaration: '$TTL ' digit digit digit digit digit;
+
+ns_record: '\tNS\t' domain_name;
+
+soa_record:
+    { new SOA = None }
+    rname { ZONE = str(rname[0]); NUM_ZONE_LABELS = len(ZONE.split('.')) } '\t'
+    'SOA' '\t'
+    '' // just storing an empty string for the SOA record for now, shouldn't matter too much
+    { SOA = str(this); RR.add(SOA) } // add the SOA RR to the list of resource records
+    ;
+
+// All the other resource records
+resource_records:
+    resource_record '\n' resource_records |
+    resource_record;
+
+resource_record:
+    { new RECORD = None }
+    record
+    (str(this) not in RR)
+    { RECORD = str(this); RR.add(RECORD) }; // only unique records allowed
+
+record:
+    { new RNAME = None; new RTYPE = None; new RDATA = None }
+    rname { RNAME = str(rname[0]) } '\t'
+    rtype { RTYPE = str(rtype[0]) } '\t'
+    rdata
+    ( len(RNAME.split('.')) >= NUM_ZONE_LABELS and '.'.join(RNAME.split('.')[-NUM_ZONE_LABELS:]) == ZONE ) // all domain names should have the zone name as their suffix
+    { RDATA = str(rdata[0]) };
+
+rname: domain_name;
+
+rtype:
+    'A' |
+    'AAAA'; 
+
+rdata:
+    (RTYPE == 'A') ip_address |
+    (RTYPE == 'AAAA') aaaa_address ;
+
+domain_name:
+    labels
+    (len(str(this).split('.')) <= 3); // maximum number of labels in the domain name is 3
+
+labels: labels '.' label | label '.' label '.'; // added .label to the second one so that the length is always 2 or more, which slows generation down by a lot
+
+label: char_string (len(str(this)) > 0 and len(str(this)) <= 3); // only allow labels of length less than or equal to 3
+
+char_string: [regex("[a-z]")];
+
+// ipv6, partly from here https://vernon.mauery.com/content/2008/04/21/ipv6-regex/
+aaaa_address: [regex("(\
+(([0-9a-f]{1,4}:){1,1}(:[0-9a-f]{1,4}){1,6})|\
+(([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5})|\
+(([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4})|\
+(([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3})|\
+(([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2})|\
+(([0-9a-f]{1,4}:){1,6}(:[0-9a-f]{1,4}){1,1})\
+)")];
+
+ip_address: digit '.' digit '.' digit '.' digit;
+
+digit: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+
