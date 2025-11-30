@@ -1,13 +1,15 @@
-// DNS_example.pg
-// Generates a minimum viable DNS Zone file for example.com.
-// Fixed: Strict IPv4 regex to prevent "bad dotted quad" errors.
+// DNS_example_constrained_extended.pg
+// Generates a DNS Zone file with SOA, NS, Glue, and multiple unique A/AAAA records.
 
-start: zone;
+// Initialize state variables. 
+// SEEN_IPS is used to ensure we don't generate duplicate IP addresses across records.
+start: {new NS_NAME = ""; new REFRESH_VAL = 0; new RETRY_VAL = 0; new SEEN_IPS = set()} zone;
 
 zone: 
     soa_record 
     ns_record 
     glue_record
+    address_record_list
     ;
 
 // --- SOA Record ---
@@ -17,41 +19,83 @@ soa_record:
     ws ttl ws 'IN' ws 'SOA' ws 
     mname ws 
     rname ws 
-    '(' ws serial ws refresh ws retry ws expire ws minimum ws ')\n'
+    '(' ws 
+        serial ws 
+        // Capture refresh value to enforce constraints on retry and expire
+        refresh {REFRESH_VAL = int(this)} ws 
+        // Constraint: Retry must be less than Refresh (RFC 1912)
+        retry   (int(this) < REFRESH_VAL) {RETRY_VAL = int(this)} ws 
+        // Constraint: Expire must be greater than Refresh + Retry
+        expire  (int(this) > REFRESH_VAL + RETRY_VAL) ws 
+        // RFC 2308: This is the Negative Caching TTL
+        minimum ws 
+    ')\n'
     ;
 
 origin: 'example.com.';
 
-mname: 'ns1.example.com.';
+// Variable MNAME: e.g., ns1.example.com.
+mname: ns_label {NS_NAME = this} '.' origin;
 
-rname: 'hostmaster.example.com.';
+ns_label: 'ns' digit;
+
+// Variable RNAME: e.g., hostmaster.example.com.
+rname: mailbox '.' origin;
+
+mailbox: 'hostmaster' | 'admin' | 'root' | 'postmaster';
 
 // --- NS Record ---
+// Must use the same Name Server host defined in SOA
 ns_record: 
-    'example.com.' ws ttl ws 'IN' ws 'NS' ws 'ns1.example.com.' '\n';
+    origin ws ttl ws 'IN' ws 'NS' ' ' [NS_NAME] '.' origin '\n';
 
 // --- Glue Record (A Record) ---
+// Address record for the Name Server (ns1.example.com)
+// We add this IP to SEEN_IPS so we don't accidentally reuse it if total uniqueness is desired.
 glue_record: 
-    'ns1.example.com.' ws ttl ws 'IN' ws 'A' ws ipv4 '\n';
+    [NS_NAME] '.' origin ws ttl ws 'IN' ws 'A' ws ipv4 {SEEN_IPS.add(this)} '\n';
+
+// --- A and AAAA Records for the Zone Tip ---
+// Generates a list of records for 'example.com.'
+address_record_list:
+    address_record address_record_list
+    | '' // Allows the list to end
+    ;
+
+address_record:
+    // A Record (IPv4)
+    // Constraint: Ensure IP hasn't been used yet
+    origin ws ttl ws 'IN' ws 'A' ws 
+    ipv4(this not in SEEN_IPS) {SEEN_IPS.add(this)} 
+    '\n'
+    |
+    // AAAA Record (IPv6)
+    // Constraint: Ensure IP hasn't been used yet
+    origin ws ttl ws 'IN' ws 'AAAA' ws 
+    ipv6(this not in SEEN_IPS) {SEEN_IPS.add(this)} 
+    '\n'
+    ;
 
 // --- Terminals & Helpers ---
 
 ws: ' ' | '\t';
 
-ttl: '3600';
+digit: [regex("[1-9]")];
 
+// TTL: Common values between 1 hour and 1 day
+ttl: [regex("3600|7200|14400|86400")];
+
+// Serial: YYYYMMDDnn format
 serial: [regex("202[3-5](0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{2}")];
 
-refresh: '7200';
-retry: '3600';
-expire: '1209600';
-minimum: '86400';
+// Time values (in seconds)
+refresh: [regex("1200|3600|7200|14400")];
+retry:   [regex("180|300|600|900")];
+expire:  [regex("604800|1209600|2419200")];
+minimum: [regex("60|180|300|3600")];
 
-// Fixed Regex: Matches 0-255 with NO leading zeros
-// Breakdown:
-// 25[0-5]      -> 250-255
-// 2[0-4][0-9]  -> 200-249
-// 1[0-9]{2}    -> 100-199
-// [1-9][0-9]   -> 10-99
-// [0-9]        -> 0-9
+// IPv4 Regex: Matches 0-255 with NO leading zeros
 ipv4: [regex("((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])")];
+
+// IPv6 Regex: Standard full 8-hextet format (e.g., 2001:0db8:...)
+ipv6: [regex("([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}")];
