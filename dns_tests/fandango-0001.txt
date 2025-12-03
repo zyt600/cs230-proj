@@ -1,0 +1,4 @@
+example.com. 14400 IN SOA ns6.example.com. admin.example.com. ( 20230101 14400 900 1209600 180 )
+example.com. 3600 IN NS ns6.example.com.
+ns9.example.com. 3600 IN A 3.5.1.6
+example.com. 14400 IN AAAA f7fexample.com. 7200 IN AAAA ab6example.com. 14400 IN AAAA 8

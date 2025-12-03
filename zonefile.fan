@@ -1,12 +1,26 @@
+def valid_ns_name(mname, ns_record):
+    mname_tokens = mname.split(' ')
+    ns_record_tokens = ns_record.split(' ')
+
+    mname_ns = mname_tokens[0]
+    ns_record_ns = ns_record_tokens[4]
+
+    if mname_ns == ns_record_ns:
+        return True
+    else:
+        return False
+
+
 <start> ::= <zone>;
 
-<zone> ::= <soa_record> <ns_record> <glue_record> <address_record_list>;
+<zone> ::= <soa_record> '\n' <ns_record> '\n' <glue_record> '\n' <address_record_list>;
 
 <soa_record> ::= <origin> <ws> <ttl> <ws> 'IN' <ws> 'SOA' <ws> <mname> <ws> <rname> <ws> '(' <ws> <serial> <ws> <refresh> <ws> <retry> <ws> <expire> <ws> <minimum> <ws> ')';
 
 <origin> ::= 'example.com.';
 
 <mname> ::= <ns_label> '.' <origin>;
+
 <ns_label> ::= 'ns' <digit>;
 
 <rname> ::= <mailbox> '.' <origin>;
@@ -20,7 +34,7 @@
 
 <address_record> ::= <origin> <ws> <ttl> <ws> 'IN' <ws> 'A' <ws> <ipv4> | <origin> <ws> <ttl> <ws> 'IN' <ws> 'AAAA' <ws> <ipv6>;
 
-<ws> ::= ' ' | '\t';
+<ws> ::= ' ';
 
 <digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 
@@ -39,3 +53,4 @@
 
 <ipv6> ::= <ip6_part> | <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> | <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part> ':' <ip6_part>;
 
+where valid_ns_name(str(<mname>), str(<ns_record>))

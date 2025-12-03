@@ -1,0 +1,3 @@
+example.com. 86400 IN SOA ns9.example.com. admin.example.com. ( 20230301 3600 900 604800 300 )
+example.com. 14400 IN NS ns9.example.com.
+ns1.example.com. 86400 IN A 0.6.9.1
