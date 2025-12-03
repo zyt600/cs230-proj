@@ -1,3 +1,7 @@
-example.com. 86400 IN SOA ns0.example.com. root.example.com. ( 20230101 14400 900 1209600 300 )
-example.com. 3600 IN NS ns0.example.com.
-ns4.example.com. 7200 IN A 1.7.4.6
+example.com. 86400 IN SOA ns6.example.com. admin.example.com. ( 2023090605 3600 300 1209600 300 )
+example.com. 86400 IN NS ns6.example.com.
+ns6.example.com. 14400 IN A 176.69.223.199
+example.com. 3600 IN A 31.252.18.41
+example.com. 86400 IN AAAA 5:F22:EDe:7A8:F:3:C:3bF9
+example.com. 7200 IN A 40.4.151.126
+example.com. 7200 IN A 255.252.104.252

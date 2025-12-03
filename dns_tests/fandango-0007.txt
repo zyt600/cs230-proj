@@ -1,4 +1,5 @@
-example.com. 86400 IN SOA ns1.example.com. postmaster.example.com. ( 20230201 7200 300 2419200 180 )
-example.com. 3600 IN NS ns1.example.com.
-ns7.example.com. 14400 IN A 5.4.0.0
-example.com. 3600 IN A 1.5.1.3example.com. 14400 IN AAAA af:f:0:8
+example.com. 7200 IN SOA ns8.example.com. root.example.com. ( 2024040999 1200 300 604800 180 )
+example.com. 14400 IN NS ns8.example.com.
+ns8.example.com. 86400 IN A 0.1.48.241
+example.com. 86400 IN AAAA 0a:d:FdD:7E:D:9Af:d2:2e
+example.com. 3600 IN AAAA fd8A:9D:De8:2748:A290:84:D865:EB
