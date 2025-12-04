@@ -74,14 +74,13 @@ def _run_progrmr_throughput(
     - mode: ProGRMR mode (e.g. 'gf' for generate+filter)
     - programs: program string (e.g. 'p' for ProGRMR only, 'progrmr,isla')
     """
-    throughput_output_dir = os.path.join(output_dir, "throughput")
     extra_args = [
         "-t", str(timeout),
         "-d", domain,
         "-m", mode,
         "-p", programs,
     ]
-    _run_progrmr_script("throughput.sh", progrmr_repo_dir, throughput_output_dir, extra_args)
+    _run_progrmr_script("throughput.sh", progrmr_repo_dir, output_dir, extra_args)
 
 def _run_progrmr_wellformedness(
     progrmr_repo_dir: str,
@@ -99,13 +98,12 @@ def _run_progrmr_wellformedness(
     - programs: program string (e.g. 'p' for ProGRMR only, 'progrmr,isla')
     - show_failures: if True, pass -s to show individual failing files
     """
-    wellformedness_output_dir = os.path.join(output_dir, "wellformedness")
     extra_args = [
         "-d", domain,
         "-p", programs,
     ]
 
-    _run_progrmr_script("wellformedness.sh", progrmr_repo_dir, wellformedness_output_dir, extra_args)
+    _run_progrmr_script("wellformedness.sh", progrmr_repo_dir, output_dir, extra_args)
 
 def _copy_throughput_unique_files_to_wellformedness(
         output_dir: str,
@@ -165,6 +163,14 @@ def main(args):
         help='Directory to output metrics.'
     )
 
+    parser.add_argument(
+        '-t',
+        '--timeout',
+        type=int,
+        default=100,
+        help='Timeout in seconds for throughput evaluations.'
+    )
+
     args = parser.parse_args(args)
     os.makedirs("progrmr_metrics", exist_ok=True)
     os.makedirs("fandango_metrics", exist_ok=True)
@@ -179,14 +185,15 @@ def main(args):
             progrmr_repo_dir=args.progrmr_dir,
             output_dir=args.output_dir,
             domain=domain,
+            timeout=args.timeout,
             mode="gf",
             programs="p",
         )
 
-        _copy_throughput_unique_files_to_wellformedness(
-            output_dir=args.output_dir,
-            domain=domain,
-        )
+        # _copy_throughput_unique_files_to_wellformedness(
+        #     output_dir=args.output_dir,
+        #     domain=domain,
+        # )
 
         print("\nGenerating ProGRMR wellformedness metrics:\n")
         _run_progrmr_wellformedness(
