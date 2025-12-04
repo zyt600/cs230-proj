@@ -3,7 +3,10 @@ import subprocess
 import sys
 import os
 
-DOMAINS = ["CSV", "REST", "XML"]
+# NOTE: to add a new domain, you will have to add its grammar to each repo's respective evaluation domain directories:
+
+# Adding DNS to ProGRMR:
+# Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
 
 def _generate_fandango_metrics(fandango_dir: str):
     pass
@@ -103,38 +106,10 @@ def _run_progrmr_wellformedness(
         "-p", programs,
     ]
 
+    if show_failures:
+        extra_args.append("-s")
+
     _run_progrmr_script("wellformedness.sh", progrmr_repo_dir, output_dir, extra_args)
-
-def _copy_throughput_unique_files_to_wellformedness(
-        output_dir: str,
-        domain: str,
-    ) -> None:
-    """
-    Copy unique files generated during throughput evaluation to the wellformedness
-    evaluation directories
-    """
-    base_output_dir = os.path.abspath(output_dir)
-    throughput_unique_dir = os.path.join(
-        base_output_dir,
-        "throughput",
-        "progrmr",
-        domain,
-        "unique"
-    )
-
-    wellformedness_input_dir = os.path.join(
-        base_output_dir,
-        "wellformedness",
-        "progrmr",
-        domain,
-        "unique"
-    )
-
-    os.makedirs(wellformedness_input_dir, exist_ok=True)
-    for filename in os.listdir(throughput_unique_dir):
-        src_file = os.path.join(throughput_unique_dir, filename)
-        dst_file = os.path.join(wellformedness_input_dir, filename)
-        subprocess.run(["cp", src_file, dst_file])
 
 def main(args):
     parser = argparse.ArgumentParser("Perform Fandango and ProGRMR fuzzer evaluations to generate metrics.")
@@ -171,37 +146,47 @@ def main(args):
         help='Timeout in seconds for throughput evaluations.'
     )
 
+    parser.add_argument(
+        '-d',
+        '--domain',
+        type=str,
+        choices=["CSV", "XML", "REST", "DNS"],
+        required=True,
+        help='Specific domain to evaluate.'
+    )
+
     args = parser.parse_args(args)
-    os.makedirs("progrmr_metrics", exist_ok=True)
-    os.makedirs("fandango_metrics", exist_ok=True)
+
+    domain = args.domain
+
+    # append progrmr_metrics and fandango_metrics directories to output_dir
+    progrmr_output_dir = os.path.join(args.output_dir, "progrmr_metrics")
+    fandango_output_dir = os.path.join(args.output_dir, "fandango_metrics")
+    os.makedirs(progrmr_output_dir, exist_ok=True)
+    os.makedirs(fandango_output_dir, exist_ok=True)
 
     print("\nGenerating Fandango metrics:\n")
     _generate_fandango_metrics(args.fandango_dir)
 
-    for domain in DOMAINS:
-        print(f"\nProcessing domain: {domain}")
-        print("\nGenerating ProGRMR throughput metrics:\n")
-        _run_progrmr_throughput(
-            progrmr_repo_dir=args.progrmr_dir,
-            output_dir=args.output_dir,
-            domain=domain,
-            timeout=args.timeout,
-            mode="gf",
-            programs="p",
-        )
+    print(f"\nProcessing domain: {domain}")
+    print("\nGenerating ProGRMR throughput metrics:\n")
+    _run_progrmr_throughput(
+        progrmr_repo_dir=args.progrmr_dir,
+        output_dir=progrmr_output_dir,
+        domain=domain,
+        timeout=args.timeout,
+        mode="gf",
+        programs="p",
+    )
 
-        # _copy_throughput_unique_files_to_wellformedness(
-        #     output_dir=args.output_dir,
-        #     domain=domain,
-        # )
-
-        print("\nGenerating ProGRMR wellformedness metrics:\n")
-        _run_progrmr_wellformedness(
-            progrmr_repo_dir=args.progrmr_dir,
-            output_dir=args.output_dir,
-            domain=domain,
-            programs="p",
-        )
+    print("\nGenerating ProGRMR wellformedness metrics:\n")
+    _run_progrmr_wellformedness(
+        progrmr_repo_dir=args.progrmr_dir,
+        output_dir=progrmr_output_dir,
+        domain=domain,
+        programs="p",
+        show_failures=True,
+    )
 
 
 if __name__ == "__main__":

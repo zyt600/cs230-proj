@@ -76,7 +76,7 @@ ISLA_CONFIGS["JSON"]="                                 "
 
 
 ### Compile the ProGRMR meta-grammar
-java -jar /usr/local/lib/antlr-4.13.2-complete.jar -Dlanguage=Python3 $PROGRMR_REPO_DIR/ProGRMRParser.g4 $PROGRMR_REPO_DIR/ProGRMRLexer.g4
+# java -jar /usr/local/lib/antlr-4.13.2-complete.jar -Dlanguage=Python3 $PROGRMR_REPO_DIR/ProGRMR/ProGRMRParser.g4 $PROGRMR_REPO_DIR/ProGRMR/ProGRMRLexer.g4
 
 
 ### Run tests for each program
