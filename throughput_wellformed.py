@@ -8,92 +8,135 @@ DOMAINS = ["CSV", "REST", "XML"]
 def _generate_fandango_metrics(fandango_dir: str):
     pass
 
-def _generate_progrmr_metrics(progrmr_repo_dir: str, output_dir: str):
-    # Normalize to absolute paths
-    if not os.path.isabs(progrmr_repo_dir):
-        progrmr_repo_dir = os.path.abspath(progrmr_repo_dir)
-    if not os.path.isabs(output_dir):
-        output_dir = os.path.abspath(output_dir)
+def _run_progrmr_script(
+    script_name: str,
+    progrmr_repo_dir: str,
+    output_dir: str,
+    extra_args: list[str],
+) -> None:
+    """
+    Common helper to run a ProGRMR evaluation script (throughput.sh or wellformed.sh).
 
-    # Append progrmr to output_dir
-    output_dir = os.path.join(output_dir)
-    output_throughput_dir = os.path.join(output_dir, "throughput")
-    os.makedirs(output_throughput_dir, exist_ok=True)
-    output_wellformed_dir = os.path.join(output_dir, "wellformed")
-    os.makedirs(output_wellformed_dir, exist_ok=True)
+    - script_name: 'throughput.sh' or 'wellformed.sh'
+    - progrmr_repo_dir: path to progrmr-anon repo (contains evaluation/, ProGRMR/, etc.)
+    - output_dir: directory where evaluation_results should live
+    - extra_args: extra CLI args for the script (e.g. ['-d', 'CSV', '-m', 'gf', '-p', 'p'])
+    """
+    # Normalize paths
+    progrmr_repo_dir = os.path.abspath(progrmr_repo_dir)
+    output_dir = os.path.abspath(output_dir)
 
-    # throughput.sh lives in ./progrmr_scripts/throughput.sh
+    # Script is in evaluation/<script_name> inside the repo
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    throughput_script = os.path.join(cur_dir, "progrmr_scripts", "throughput.sh")
-    if not os.path.isfile(throughput_script):
+    script_path = os.path.join(cur_dir, "progrmr_scripts", script_name)
+    if not os.path.isfile(script_path):
         raise FileNotFoundError(
-            f"Could not find throughput.sh at {throughput_script}. "
+            f"Could not find {script_name} at {script_path}. "
         )
 
-    # Build environment with overrides
+    # Environment overrides (used by your modified scripts)
     env = os.environ.copy()
     env["PROGRMR_REPO_DIR"] = progrmr_repo_dir
-    env["OUTPUT_BASE_DIR"] = output_throughput_dir
+    env["OUTPUT_BASE_DIR"] = output_dir
 
-    # Same flags you were using manually: -t 5 -d CSV -m gf -p p
-    cmd = [
-        "bash",
-        throughput_script,
-        "-t", "5",
-        "-d", "CSV",
-        "-m", "gf",
-        "-p", "p",
-    ]
+    cmd = ["bash", script_path] + extra_args
 
+    print(f"\nRunning {script_name}:")
     print(f"  PROGRMR_REPO_DIR = {progrmr_repo_dir}")
-    print(f"  OUTPUT_BASE_DIR  = {output_throughput_dir}")
+    print(f"  OUTPUT_BASE_DIR  = {output_dir}")
     print(f"  Command: {' '.join(cmd)}\n")
 
-    # Run with cwd = progrmr_dir so relative paths in the script match
     result = subprocess.run(
         cmd,
-        cwd=progrmr_repo_dir,
+        cwd=progrmr_repo_dir,  # so relative paths inside the script work
         env=env,
         text=True,
     )
 
     if result.returncode != 0:
-        raise RuntimeError(
-            f"throughput.sh failed with exit code {result.returncode}"
-        )
+        raise RuntimeError(f"{script_name} failed with exit code {result.returncode}")
     
-    wellformed_script = os.path.join(cur_dir, "progrmr_scripts", "wellformed.sh")
-    if not os.path.isfile(wellformed_script):
-        raise FileNotFoundError(
-            f"Could not find wellformed.sh at {wellformed_script}. "
-        )
-    
-    # Change environment for wellformed.sh
-    env["OUTPUT_BASE_DIR"] = output_wellformed_dir
-    
-    # Now run wellformed.sh
-    cmd = [
-        "bash",
-        wellformed_script,
-        "-d", "CSV",
-        "-p", "p"
+def _run_progrmr_throughput(
+    progrmr_repo_dir: str,
+    output_dir: str,
+    domain: str,
+    timeout: int = 100,
+    mode: str = "gf",
+    programs: str = "p",
+) -> None:
+    """
+    Run throughput.sh for a single domain (e.g. 'CSV', 'XML', 'REST').
+
+    - progrmr_repo_dir: progrmr-anon repo root
+    - output_dir: where evaluation_results should go
+    - domain: 'CSV', 'XML', 'REST', etc.
+    - timeout: timeout in seconds (maps to -t)
+    - mode: ProGRMR mode (e.g. 'gf' for generate+filter)
+    - programs: program string (e.g. 'p' for ProGRMR only, 'progrmr,isla')
+    """
+    throughput_output_dir = os.path.join(output_dir, "throughput")
+    extra_args = [
+        "-t", str(timeout),
+        "-d", domain,
+        "-m", mode,
+        "-p", programs,
+    ]
+    _run_progrmr_script("throughput.sh", progrmr_repo_dir, throughput_output_dir, extra_args)
+
+def _run_progrmr_wellformedness(
+    progrmr_repo_dir: str,
+    output_dir: str,
+    domain: str,
+    programs: str = "p",
+    show_failures: bool = False,
+) -> None:
+    """
+    Run wellformed.sh for a single domain (e.g. 'CSV', 'XML', 'REST').
+
+    - progrmr_repo_dir: progrmr-anon repo root
+    - output_dir: where evaluation_results should go (same OUTPUT_BASE_DIR)
+    - domain: 'CSV', 'XML', 'REST', etc.
+    - programs: program string (e.g. 'p' for ProGRMR only, 'progrmr,isla')
+    - show_failures: if True, pass -s to show individual failing files
+    """
+    wellformedness_output_dir = os.path.join(output_dir, "wellformedness")
+    extra_args = [
+        "-d", domain,
+        "-p", programs,
     ]
 
-    print(f"  PROGRMR_REPO_DIR = {progrmr_repo_dir}")
-    print(f"  OUTPUT_BASE_DIR  = {output_wellformed_dir}")
-    print(f"  Command: {' '.join(cmd)}\n")
+    _run_progrmr_script("wellformedness.sh", progrmr_repo_dir, wellformedness_output_dir, extra_args)
 
-    result = subprocess.run(
-        cmd,
-        cwd=progrmr_repo_dir,
-        env=env,
-        text=True,
+def _copy_throughput_unique_files_to_wellformedness(
+        output_dir: str,
+        domain: str,
+    ) -> None:
+    """
+    Copy unique files generated during throughput evaluation to the wellformedness
+    evaluation directories
+    """
+    base_output_dir = os.path.abspath(output_dir)
+    throughput_unique_dir = os.path.join(
+        base_output_dir,
+        "throughput",
+        "progrmr",
+        domain,
+        "unique"
     )
 
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"wellformed.sh failed with exit code {result.returncode}"
-        )
+    wellformedness_input_dir = os.path.join(
+        base_output_dir,
+        "wellformedness",
+        "progrmr",
+        domain,
+        "unique"
+    )
+
+    os.makedirs(wellformedness_input_dir, exist_ok=True)
+    for filename in os.listdir(throughput_unique_dir):
+        src_file = os.path.join(throughput_unique_dir, filename)
+        dst_file = os.path.join(wellformedness_input_dir, filename)
+        subprocess.run(["cp", src_file, dst_file])
 
 def main(args):
     parser = argparse.ArgumentParser("Perform Fandango and ProGRMR fuzzer evaluations to generate metrics.")
@@ -128,8 +171,30 @@ def main(args):
 
     print("\nGenerating Fandango metrics:\n")
     _generate_fandango_metrics(args.fandango_dir)
-    print("\nGenerating ProGRMR metrics:\n")
-    _generate_progrmr_metrics(args.progrmr_dir, args.output_dir)
+
+    for domain in DOMAINS:
+        print(f"\nProcessing domain: {domain}")
+        print("\nGenerating ProGRMR throughput metrics:\n")
+        _run_progrmr_throughput(
+            progrmr_repo_dir=args.progrmr_dir,
+            output_dir=args.output_dir,
+            domain=domain,
+            mode="gf",
+            programs="p",
+        )
+
+        _copy_throughput_unique_files_to_wellformedness(
+            output_dir=args.output_dir,
+            domain=domain,
+        )
+
+        print("\nGenerating ProGRMR wellformedness metrics:\n")
+        _run_progrmr_wellformedness(
+            progrmr_repo_dir=args.progrmr_dir,
+            output_dir=args.output_dir,
+            domain=domain,
+            programs="p",
+        )
 
 
 if __name__ == "__main__":
