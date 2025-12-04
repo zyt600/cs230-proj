@@ -40,8 +40,13 @@ SHOW_FAILURES=${SHOW_FAILURES:-0} # Default don't show failures
 
 
 ### Define directories and files
-EVAL_DIR="./evaluation_results"
-OUTPUT="./evaluation_results/wellformedness.txt"
+# Input variable: where the ProGRMR repo lives (provided via env PROGRMR_REPO_DIR)
+PROGRMR_REPO_DIR="${PROGRMR_REPO_DIR}"
+# Input variable: where evaluation output should be directed (provided via env OUTPUT_BASE_DIR)
+OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR}"
+
+EVAL_DIR="$OUTPUT_BASE_DIR"
+OUTPUT="$OUTPUT_BASE_DIR/wellformedness.txt"
 LOG="output.txt"
 echo "-----" >> $OUTPUT
 rm $LOG
@@ -84,7 +89,7 @@ for program in "${PROGRAMS[@]}"; do
 
                 # Test if the file is wellformed
                 # if [[ "$(cat $file)" == "{}" || $(timeout 10 isla check isla/$domain/grammar.py -c true -i "$(cat $file)") == *"satisfies"* ]];
-                if python3 acceptance_checkers/main.py -d $domain -f $file >> $LOG 2>&1; 
+                if python3 "$PROGRMR_REPO_DIR/evaluation/acceptance_checkers/main.py" -d $domain -f $file >> $LOG 2>&1; 
                 then
 
                     wellformed=$((wellformed + 1))
@@ -95,7 +100,7 @@ for program in "${PROGRAMS[@]}"; do
                 else
 
                     echo -e "${RED}File ${YELLOW}$file${RED} is not wellformed.${RESET}                             "
-                    echo -e "${RED}    Command: ${YELLOW}python3 acceptance_checkers/main.py -d $domain -f $file${RESET}"
+                    echo -e "${RED}    Command: ${YELLOW}python3 $PROGRMR_REPO_DIR/evaluation/acceptance_checkers/main.py -d $domain -f $file${RESET}"
                 
                 fi
 
@@ -113,7 +118,7 @@ for program in "${PROGRAMS[@]}"; do
 
         else
 
-            python3 acceptance_checkers/parallel_main.py --directory $in_dir -d $domain -p $program -o $OUTPUT --od $out_dir 2> $LOG
+            python3 "$PROGRMR_REPO_DIR/evaluation/acceptance_checkers/parallel_main.py" --directory $in_dir -d $domain -p $program -o $OUTPUT --od $out_dir 2> $LOG
 
         fi
 

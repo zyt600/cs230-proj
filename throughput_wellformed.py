@@ -3,41 +3,7 @@ import subprocess
 import sys
 import os
 
-def _run_progrmr_throughput_command(command, cwd: str, log_dir: str):
-    """
-    Helper: run command in directory `cwd`, logging output.
-    """
-    os.makedirs(log_dir, exist_ok=True)
-    print(f"  > Running in {cwd}:")
-    print(f"    {' '.join(command)}\n")
-
-    # ProGRMR's throughput.sh command's output logs can be modified via environment variables
-    env = os.environ.copy()
-    env["OUTPUT_BASE"] = log_dir
-
-    result = subprocess.run(
-        command,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        env=env
-    )
-
-    std_path = os.path.join(log_dir, "output.log")
-
-    with open(std_path, "w") as f:
-        f.write("=== STDOUT ===\n")
-        f.write(result.stdout)
-        f.write("\n=== STDERR ===\n")
-        f.write(result.stderr)
-
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"Command {' '.join(command)} failed with code {result.returncode}. "
-            f"See log: {log_dir}"
-        )
-
-    print(f"Completed. Log: {log_dir}\n")
+DOMAINS = ["CSV", "REST", "XML"]
 
 def _generate_fandango_metrics(fandango_dir: str):
     pass
@@ -51,6 +17,10 @@ def _generate_progrmr_metrics(progrmr_repo_dir: str, output_dir: str):
 
     # Append progrmr to output_dir
     output_dir = os.path.join(output_dir)
+    output_throughput_dir = os.path.join(output_dir, "throughput")
+    os.makedirs(output_throughput_dir, exist_ok=True)
+    output_wellformed_dir = os.path.join(output_dir, "wellformed")
+    os.makedirs(output_wellformed_dir, exist_ok=True)
 
     # throughput.sh lives in ./progrmr_scripts/throughput.sh
     cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -63,7 +33,7 @@ def _generate_progrmr_metrics(progrmr_repo_dir: str, output_dir: str):
     # Build environment with overrides
     env = os.environ.copy()
     env["PROGRMR_REPO_DIR"] = progrmr_repo_dir
-    env["OUTPUT_BASE_DIR"] = output_dir
+    env["OUTPUT_BASE_DIR"] = output_throughput_dir
 
     # Same flags you were using manually: -t 5 -d CSV -m gf -p p
     cmd = [
@@ -76,7 +46,7 @@ def _generate_progrmr_metrics(progrmr_repo_dir: str, output_dir: str):
     ]
 
     print(f"  PROGRMR_REPO_DIR = {progrmr_repo_dir}")
-    print(f"  OUTPUT_BASE_DIR  = {output_dir}")
+    print(f"  OUTPUT_BASE_DIR  = {output_throughput_dir}")
     print(f"  Command: {' '.join(cmd)}\n")
 
     # Run with cwd = progrmr_dir so relative paths in the script match
@@ -90,6 +60,39 @@ def _generate_progrmr_metrics(progrmr_repo_dir: str, output_dir: str):
     if result.returncode != 0:
         raise RuntimeError(
             f"throughput.sh failed with exit code {result.returncode}"
+        )
+    
+    wellformed_script = os.path.join(cur_dir, "progrmr_scripts", "wellformed.sh")
+    if not os.path.isfile(wellformed_script):
+        raise FileNotFoundError(
+            f"Could not find wellformed.sh at {wellformed_script}. "
+        )
+    
+    # Change environment for wellformed.sh
+    env["OUTPUT_BASE_DIR"] = output_wellformed_dir
+    
+    # Now run wellformed.sh
+    cmd = [
+        "bash",
+        wellformed_script,
+        "-d", "CSV",
+        "-p", "p"
+    ]
+
+    print(f"  PROGRMR_REPO_DIR = {progrmr_repo_dir}")
+    print(f"  OUTPUT_BASE_DIR  = {output_wellformed_dir}")
+    print(f"  Command: {' '.join(cmd)}\n")
+
+    result = subprocess.run(
+        cmd,
+        cwd=progrmr_repo_dir,
+        env=env,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"wellformed.sh failed with exit code {result.returncode}"
         )
 
 def main(args):
