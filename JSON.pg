@@ -17,7 +17,7 @@ pair : key ':' value (key[0] not in KEYS) {KEYS.add(key[0])};
 
 key : strng;
 
-strng : '"' chars '"' (len(chars[0]) <= 5);
+strng : '"' chars (len(chars[0]) <= 5) '"';
 
 chars : [regex("[A-Za-z0-9]+")];
 
