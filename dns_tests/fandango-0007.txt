@@ -1,5 +1,0 @@
-example.com. 7200 IN SOA ns8.example.com. root.example.com. ( 2024040999 1200 300 604800 180 )
-example.com. 14400 IN NS ns8.example.com.
-ns8.example.com. 86400 IN A 0.1.48.241
-example.com. 86400 IN AAAA 0a:d:FdD:7E:D:9Af:d2:2e
-example.com. 3600 IN AAAA fd8A:9D:De8:2748:A290:84:D865:EB

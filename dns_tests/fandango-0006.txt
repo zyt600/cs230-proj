@@ -1,3 +1,0 @@
-example.com. 3600 IN SOA ns9.example.com. root.example.com. ( 2023071695 1200 180 1209600 60 )
-example.com. 86400 IN NS ns9.example.com.
-ns9.example.com. 3600 IN A 255.7.218.251

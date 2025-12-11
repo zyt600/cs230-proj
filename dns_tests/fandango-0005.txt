@@ -1,6 +1,0 @@
-example.com. 86400 IN SOA ns9.example.com. hostmaster.example.com. ( 2024082819 1200 180 604800 60 )
-example.com. 14400 IN NS ns9.example.com.
-ns9.example.com. 86400 IN A 251.255.3.155
-example.com. 7200 IN AAAA 81:5:56:89:2d:d0:d:92
-example.com. 3600 IN A 251.160.250.55
-example.com. 86400 IN AAAA e4b:beF:be76:4fe5:0:c:9F2:cD

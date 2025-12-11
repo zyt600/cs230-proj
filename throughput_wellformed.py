@@ -3,7 +3,7 @@ import subprocess
 import sys
 import os
 
-DOMAINS = ["CSV", "REST", "XML"]
+DOMAINS = ["REST", "XML", "CSV"]
 
 def _generate_fandango_metrics(fandango_dir: str):
     pass
