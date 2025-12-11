@@ -3,14 +3,10 @@ import subprocess
 import sys
 import os
 
-<<<<<<< HEAD
-DOMAINS = ["REST", "XML", "CSV"]
-=======
 # NOTE: to add a new domain, you will have to add its grammar to each repo's respective evaluation domain directories:
 
 # Adding DNS to ProGRMR:
 # Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
->>>>>>> 79ecb5cdf18a4dc8f740c9dcb535da3449765c05
 
 def _generate_fandango_metrics(fandango_dir: str):
     pass
