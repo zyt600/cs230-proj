@@ -24,7 +24,7 @@
 
 # This code ensures that all keys within a JSON object block are unique
 
-where unique_keys(<key_values>)
+where unique_keys(<key_values>) and str(<string>) <= 7 and str(<integer>) <= 5
 
 def unique_keys(key_values):
     def all_keys(tree):
