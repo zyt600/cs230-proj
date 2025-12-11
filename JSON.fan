@@ -22,10 +22,9 @@
 
 <integer> ::= <digit>+
 
+# This code ensures that all keys within a JSON object block are unique
+
 where unique_keys(<key_values>)
-
-
-# This code ensures that all keys within a JSON object block must be unique
 
 def unique_keys(key_values):
     def all_keys(tree):
