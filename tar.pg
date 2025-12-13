@@ -1,0 +1,114 @@
+start : entries | final_entry;
+
+entries : entry | entry entries;
+
+entry: header content;
+
+header:
+    { new HEADER_STR = ""; new CHECKSUM = None; }
+    header_parts
+    (CHECKSUM == oct(sum(HEADER_STR.encode('ascii')))[2:].rjust(6, '0') + '\0 ');
+
+header_parts: 
+    file_name { HEADER_STR = file_name[0] }
+    file_mode { HEADER_STR = HEADER_STR + file_mode[0] }
+    uid { HEADER_STR = HEADER_STR + uid[0] }
+    gid { HEADER_STR = HEADER_STR + gid[0] }
+    file_size { HEADER_STR = HEADER_STR + file_size[0] }
+    mod_time { HEADER_STR = HEADER_STR + mod_time[0] }
+    checksum { HEADER_STR = HEADER_STR + " "  * 8 ; CHECKSUM = checksum[0] }
+    typeflag { HEADER_STR = HEADER_STR + typeflag[0] }
+    linked_file_name { HEADER_STR = HEADER_STR + linked_file_name[0] }
+    'ustar' {HEADER_STR = HEADER_STR + 'ustar' }
+    nul { HEADER_STR = HEADER_STR + nul[0] }
+    '00' { HEADER_STR = HEADER_STR + '00'}
+    uname { HEADER_STR = HEADER_STR + uname[0] }
+    gname { HEADER_STR = HEADER_STR + gname[0] }
+    dev_maj_num { HEADER_STR = HEADER_STR + dev_maj_num[0] }
+    dev_min_num { HEADER_STR = HEADER_STR + dev_min_num[0] }
+    file_name_prefix { HEADER_STR = HEADER_STR + file_name_prefix[0] }
+    header_padding { HEADER_STR = HEADER_STR + uname[0] };
+
+file_name : 
+    { new LEN = random.randint(0, 99) } 
+    file_name_first_char 
+    file_name_chars 
+    nuls
+    (len(str(file_name_chars[0])) == LEN and len(str(nuls)) == 99 - LEN);
+
+file_name_chars : file_name_char file_name_chars | file_name_char;
+
+file_mode : octal_digits space nul (len(str(octal_digits[0])) == 6);
+
+uid : octal_digits space nul (len(str(octal_digits[0])) == 6);
+
+gid : octal_digits space nul (len(str(octal_digits[0])) == 6);
+
+file_size : file_size_beginning octal_digits space (len(str(octal_digits[0])) == 2);
+
+file_size_beginning : '000000001' | '000000000';
+
+mod_time : octal_digits space (len(str(octal_digits[0])) == 11);
+
+checksum : octal_digits space (len(str(octal_digits[0])) == 6);
+
+typeflag : '0';
+
+linked_file_name : 
+    { new LEN = random.randint(0, 99) } 
+    file_name_first_char 
+    file_name_chars 
+    nuls
+    (len(str(file_name_chars[0])) == LEN and len(str(nuls)) == 99 - LEN);
+
+
+uname : 
+    { new LEN = random.randint(0, 31) } 
+    uname_first_char 
+    uname_chars
+    nuls (len(str(uname_chars[0])) == LEN and len(str(nuls)) == 31 - LEN);
+
+gname : 
+    { new LEN = random.randint(0, 31) }
+    uname_first_char 
+    uname_chars
+    nuls (len(str(uname_chars[0])) == LEN and len(str(nuls)) == 31 - LEN);
+
+uname_chars: uname_char uname_chars | uname_char;
+
+uname_first_char: 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm'| 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z' | '_';
+
+uname_char: 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm'| 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z'| '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '_' | '-';
+
+dev_maj_num : octal_digits space nul (len(octal_digits[0]) == 6);
+
+dev_min_num : octal_digits space nul (len(octal_digits[0]) == 6);
+
+file_name_prefix: nuls (len(nuls[0]) == 155); 
+
+header_padding : nuls (len(nuls[0]) == 12);
+
+content :
+    { new LEN = random.randint(0, 512) }
+    chars 
+    nuls (len(str(chars[0])) == LEN and len(str(nuls[0])) == 512 - LEN);
+
+chars : character chars | character;
+
+final_entry: nuls (len(str(nuls[0])) == 1024);
+
+nuls : nul nuls | nul;
+
+octal_digits: octal_digit octal_digits | octal_digit;
+
+octal_digit: [regex("[0-7]")];
+
+character: [regex("[0-9a-zA-Z]")];
+
+file_name_first_char: [regex("[a-zA-Z0-9]|_")];
+
+file_name_char : [regex("[0-9a-zA-Z]")];
+
+nul : [regex('\x00')];
+
+space: ' ';
