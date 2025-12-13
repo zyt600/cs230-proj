@@ -8,14 +8,23 @@ import os
 # Adding DNS to ProGRMR:
 # Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
 
-def _generate_fandango_metrics(fandango_dir: str):
-    pass
+def _run_fandango_diversity(
+        fandango_dir: str,
+        output_dir: str,
+        timeout: int = 100,
+        num_workers: int = 1,
+        batch_size: int = 500,
+        max_samples: int = 500
+    ):
+    fandango_repo_dir = os.path.abspath(fandango_dir)
+    output_dir = os.path.abspath(output_dir)
 
 def _run_progrmr_script(
     script_name: str,
     progrmr_repo_dir: str,
     output_dir: str,
     extra_args: list[str],
+    extra_env: dict[str, str] = {},
 ) -> None:
     """
     Common helper to run a ProGRMR evaluation script (throughput.sh or wellformed.sh).
@@ -41,6 +50,8 @@ def _run_progrmr_script(
     env = os.environ.copy()
     env["PROGRMR_REPO_DIR"] = progrmr_repo_dir
     env["OUTPUT_BASE_DIR"] = output_dir
+    for k, v in extra_env.items():
+        env[k] = v
 
     cmd = ["bash", script_path] + extra_args
 
@@ -111,6 +122,25 @@ def _run_progrmr_wellformedness(
 
     _run_progrmr_script("wellformedness.sh", progrmr_repo_dir, output_dir, extra_args)
 
+def _run_progrmr_diversity(
+    progrmr_repo_dir: str,
+    output_dir: str,
+    domain: str,
+) -> None:
+    """
+    Run diversity.sh for a single domain (e.g. 'CSV', 'XML', 'REST').
+
+    - progrmr_repo_dir: progrmr-anon repo root
+    - output_dir: where evaluation_results should go (same OUTPUT_BASE_DIR)
+    - domain: 'CSV', 'XML', 'REST', etc.
+    """
+    extra_args = [
+        "-d", domain,
+        "-p", "progrmr"
+    ]
+
+    _run_progrmr_script("diversity.sh", progrmr_repo_dir, output_dir, extra_args)
+
 def main(args):
     parser = argparse.ArgumentParser("Perform Fandango and ProGRMR fuzzer evaluations to generate metrics.")
 
@@ -180,12 +210,19 @@ def main(args):
     )
 
     print("\nGenerating ProGRMR wellformedness metrics:\n")
-    _run_progrmr_wellformedness(
+    # _run_progrmr_wellformedness(
+    #     progrmr_repo_dir=args.progrmr_dir,
+    #     output_dir=progrmr_output_dir,
+    #     domain=domain,
+    #     programs="p",
+    #     show_failures=True,
+    # )
+
+    print("\nGenerating ProGRMR diversity metrics:\n")
+    _run_progrmr_diversity(
         progrmr_repo_dir=args.progrmr_dir,
         output_dir=progrmr_output_dir,
         domain=domain,
-        programs="p",
-        show_failures=True,
     )
 
 

@@ -1,3 +1,0 @@
-example.com. 86400 IN SOA ns4.example.com. hostmaster.example.com. ( 2025120699 1200 180 604800 300 )
-example.com. 3600 IN NS ns4.example.com.
-ns4.example.com. 7200 IN A 207.165.166.15

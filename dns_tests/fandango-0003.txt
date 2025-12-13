@@ -1,3 +1,0 @@
-example.com. 3600 IN SOA ns4.example.com. admin.example.com. ( 2025113033 3600 180 1209600 180 )
-example.com. 7200 IN NS ns4.example.com.
-ns4.example.com. 14400 IN A 251.173.8.7

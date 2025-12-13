@@ -1,3 +1,0 @@
-example.com. 86400 IN SOA ns6.example.com. postmaster.example.com. ( 2025031377 7200 300 604800 3600 )
-example.com. 14400 IN NS ns6.example.com.
-ns6.example.com. 7200 IN A 3.54.143.251

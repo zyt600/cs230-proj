@@ -1,1 +1,8 @@
 rstr
+textdistance
+fandango
+pandas
+seaborn
+textdistance
+tqdm
+click

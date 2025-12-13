@@ -1,4 +1,2 @@
-/zone.zone:2: no current owner name
-/zone.zone:4: no current owner name
-zone example.com/IN: loading from master file /zone.zone failed: no owner
-zone example.com/IN: not loaded due to errors.
+zone example.com/IN: loaded serial 2024103096
+OK
