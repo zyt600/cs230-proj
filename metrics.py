@@ -11,13 +11,46 @@ import os
 def _run_fandango_diversity(
         fandango_dir: str,
         output_dir: str,
+        domain: str,
         timeout: int = 100,
         num_workers: int = 1,
         batch_size: int = 500,
-        max_samples: int = 500
+        max_samples: int = 500,
     ):
     fandango_repo_dir = os.path.abspath(fandango_dir)
-    output_dir = os.path.abspath(output_dir)
+    output_dir = os.path.join(os.path.abspath(output_dir), domain)
+    output_csv = os.path.join(output_dir, "diversity.csv")
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    script_path = os.path.join(cur_dir, "fandango_scripts", "compute_diversity.py")
+    if not os.path.isfile(script_path):
+        raise FileNotFoundError(
+            f"Could not find compute_diversity.py at {script_path}"
+        )
+    
+    domain_lower = domain.lower()
+    cmd_args = [
+        "--grammar", os.path.join(fandango_repo_dir, "evaluation", domain_lower, f"{domain_lower}.fan"),
+        "--seconds", str(timeout),
+        "--output", output_csv,
+        "--workers", str(num_workers),
+        "--batch-size", str(batch_size),
+        "--max-samples", str(max_samples)
+    ]
+    cmd = ["python3", script_path] + cmd_args
+
+    print(f"\nRunning compute_diversity.py:")
+    print(f"  PROGRMR_REPO_DIR = {fandango_repo_dir}")
+    print(f"  OUTPUT_BASE_DIR  = {output_dir}")
+    print(f"  Command: {' '.join(cmd)}\n")
+
+    result = subprocess.run(
+        cmd,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(f"compute_diversity.py failed with exit code {result.returncode}")
 
 def _run_progrmr_script(
     script_name: str,
@@ -196,34 +229,34 @@ def main(args):
     os.makedirs(fandango_output_dir, exist_ok=True)
 
     print("\nGenerating Fandango metrics:\n")
-    _generate_fandango_metrics(args.fandango_dir)
+    _run_fandango_diversity(args.fandango_dir, fandango_output_dir, domain, args.timeout)
 
     print(f"\nProcessing domain: {domain}")
     print("\nGenerating ProGRMR throughput metrics:\n")
-    _run_progrmr_throughput(
-        progrmr_repo_dir=args.progrmr_dir,
-        output_dir=progrmr_output_dir,
-        domain=domain,
-        timeout=args.timeout,
-        mode="gf",
-        programs="p",
-    )
-
-    print("\nGenerating ProGRMR wellformedness metrics:\n")
-    # _run_progrmr_wellformedness(
+    # _run_progrmr_throughput(
     #     progrmr_repo_dir=args.progrmr_dir,
     #     output_dir=progrmr_output_dir,
     #     domain=domain,
+    #     timeout=args.timeout,
+    #     mode="gf",
     #     programs="p",
-    #     show_failures=True,
     # )
 
-    print("\nGenerating ProGRMR diversity metrics:\n")
-    _run_progrmr_diversity(
-        progrmr_repo_dir=args.progrmr_dir,
-        output_dir=progrmr_output_dir,
-        domain=domain,
-    )
+    # print("\nGenerating ProGRMR wellformedness metrics:\n")
+    # # _run_progrmr_wellformedness(
+    # #     progrmr_repo_dir=args.progrmr_dir,
+    # #     output_dir=progrmr_output_dir,
+    # #     domain=domain,
+    # #     programs="p",
+    # #     show_failures=True,
+    # # )
+
+    # print("\nGenerating ProGRMR diversity metrics:\n")
+    # _run_progrmr_diversity(
+    #     progrmr_repo_dir=args.progrmr_dir,
+    #     output_dir=progrmr_output_dir,
+    #     domain=domain,
+    # )
 
 
 if __name__ == "__main__":

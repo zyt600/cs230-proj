@@ -47,7 +47,7 @@ def plot_hist(df: pd.DataFrame, output_csv: Path) -> None:
     img_path = output_csv.with_suffix(".png")
     sns.displot(df, x="distance")
     mean = df["distance"].mean()
-    plt.axvline(mean, color="red", inestyle="--")
+    plt.axvline(mean, color="red", linestyle="--")
     plt.text(mean + 1, plt.gca().get_ylim()[1] * 0.9, f"Avg: {mean:.2f}", color="red")
     plt.savefig(img_path)
     print(f"Saved histogram to {img_path}")
