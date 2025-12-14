@@ -9,7 +9,7 @@ import shutil
 # Adding DNS to ProGRMR:
 # Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
 
-FANDANGO_CUSTOM_DOMAINS = ["c", "dns", "json"]
+FANDANGO_CUSTOM_DOMAINS = ["c"]
 
 def _add_custom_domains_to_fandango(fandango_repo_dir: str) -> None:
     fandango_repo_dir = os.path.abspath(fandango_repo_dir)
@@ -24,6 +24,55 @@ def _add_custom_domains_to_fandango(fandango_repo_dir: str) -> None:
         fandango_evaluation_domain_dir = os.path.join(fandango_evaluation_dir, domain)
         os.makedirs(fandango_evaluation_domain_dir, exist_ok=True)
         shutil.copytree(domain_path, fandango_evaluation_domain_dir, dirs_exist_ok=True)
+
+    # ProGRMR bug: when evaluating, XML's evaluator tries to reference xml.etree but fails since the enclosing folder
+    # is also called xml. This code resolves this.
+    xml_original_path = os.path.join(fandango_evaluation_dir, "xml")
+    if os.path.exists(xml_original_path):
+        shutil.rmtree(xml_original_path)
+    xml_fixed_path = os.path.join(custom_grammars_path, "xml")
+    xml_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "xml_test")
+    if not os.path.exists(xml_fixed_fandango_path):
+        shutil.copytree(xml_fixed_path, xml_fixed_fandango_path)
+
+    # Do same with CSV, REST, and TAR
+    csv_original_path = os.path.join(fandango_evaluation_dir, "csv")
+    if os.path.exists(csv_original_path):
+        shutil.rmtree(csv_original_path)
+    csv_fixed_path = os.path.join(custom_grammars_path, "csv")
+    csv_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "csv_test")
+    if not os.path.exists(csv_fixed_fandango_path):
+        shutil.copytree(csv_fixed_path, csv_fixed_fandango_path)
+
+    rest_original_path = os.path.join(fandango_evaluation_dir, "rest")
+    if os.path.exists(rest_original_path):
+        shutil.remtree(rest_original_path)
+    rest_fixed_path = os.path.join(custom_grammars_path, "rest")
+    rest_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "rest_test")
+    if not os.path.exists(rest_fixed_fandango_path):
+        shutil.copytree(rest_fixed_path, rest_fixed_fandango_path)
+
+    tar_original_path = os.path.join(fandango_evaluation_dir, "tar")
+    if os.path.exists(tar_original_path):
+        shutil.rmtree(tar_original_path)
+    tar_fixed_path = os.path.join(custom_grammars_path, "tar")
+    tar_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "tar_test")
+    if not os.path.exists(tar_fixed_fandango_path):
+        shutil.copytree(tar_fixed_path, tar_fixed_fandango_path)
+
+    # Do similar with DNS and JSON
+
+    # DNS
+    dns_fixed_path = os.path.join(custom_grammars_path, "dns")
+    dns_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "dns_test")
+    if not os.path.exists(dns_fixed_fandango_path):
+        shutil.copytree(dns_fixed_path, dns_fixed_fandango_path)
+
+    # JSON
+    json_fixed_path = os.path.join(custom_grammars_path, "json")
+    json_fixed_fandango_path = os.path.join(fandango_evaluation_dir, "json_test")
+    if not os.path.exists(json_fixed_fandango_path):
+        shutil.copytree(json_fixed_path, json_fixed_fandango_path)
     
     # Copy acceptance checker runner
     main_path = os.path.join(custom_grammars_path, "run_evaluation.py")
@@ -34,14 +83,19 @@ def _run_fandango_evaluation(
         output_dir: str,
         timeout: int = 100
 ):
+    fandango_dir = os.path.abspath(fandango_dir)
+    output_dir = os.path.abspath(output_dir)
     stdout_path = os.path.join(output_dir, "fandango_evaluation.txt")
     stderr_path = os.path.join(output_dir, "fandango_evaluation_err.txt")
 
     with open(stdout_path, "w") as out, open(stderr_path, "w") as err:
         run_evaluation_path = os.path.join(fandango_dir, "evaluation", "run_evaluation.py")
-        cmd = ["python3", run_evaluation_path, timeout]
+        cmd = ["python3", run_evaluation_path, str(timeout)]
+        cwd = fandango_dir
+        print(cmd)
         subprocess.run(
             cmd,
+            cwd=cwd,
             stdout=out,
             stderr=err,
             text=True,
@@ -69,8 +123,9 @@ def _run_fandango_diversity(
         )
     
     domain_lower = domain.lower()
+    custom_grammar_dir = os.path.join(cur_dir, "custom_grammars", "fandango", domain_lower)
     cmd_args = [
-        "--grammar", os.path.join(fandango_repo_dir, "evaluation", domain_lower, f"{domain_lower}.fan"),
+        "--grammar", os.path.join(custom_grammar_dir, f"{domain_lower}.fan"),
         "--seconds", str(timeout),
         "--output", output_csv,
         "--workers", str(num_workers),

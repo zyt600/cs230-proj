@@ -1,40 +1,37 @@
+import csv
 import os
 from pathlib import Path
-import subprocess
-import tempfile
 import time
-import shutil
+from io import StringIO
 
 from fandango.evolution.algorithm import Fandango, LoggerLevel
 from fandango.language.parse import parse
 
 
-def is_syntactically_valid_c(c_string: str):
+def is_syntactically_valid_csv(csv_string):
     try:
-        clang = shutil.which("clang")
-        if not clang:
-            return False
-        
-        with tempfile.TemporaryDirectory() as td:
-            c_path = Path(td) / "prog.c"
-            c_path.write_text(c_string, encoding="utf-8", errors="ignore")
+        # Create a file-like object from the string
+        csv_file = StringIO(csv_string)
 
-            proc = subprocess.run(
-                [clang, "-fsyntax-only", str(c_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
-            )
-            return proc.returncode == 0
-    except Exception:
+        # Create a CSV reader to parse the string
+        reader = csv.reader(csv_file)
+
+        # Iterate through the reader to trigger any parsing errors
+        for row in reader:
+            pass
+
+        # If no errors, it's a valid CSV syntactically
+        return True
+    except csv.Error:
+        # If there's a CSV parsing error, it's not valid
         return False
 
 
-def evaluate_c(
+def evaluate_csv(
     seconds=60,
 ) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
     here = Path(__file__).resolve().parent
-    file_path = os.path.join(here, "c.fan")
+    file_path = os.path.join(here, "csv.fan")
     with open(file_path, "r") as file:
         grammar, constraints = parse(file, use_stdlib=False)
         assert grammar is not None
@@ -54,14 +51,14 @@ def evaluate_c(
 
     valid = []
     for solution in solutions:
-        if is_syntactically_valid_c(str(solution)):
+        if is_syntactically_valid_csv(str(solution)):
             valid.append(solution)
 
     set_mean_length = sum(len(str(x)) for x in valid) / len(valid)
     set_medium_length = sorted(len(str(x)) for x in valid)[len(valid) // 2]
     valid_percentage = len(valid) / len(solutions) * 100
     return (
-        "C",
+        "CSV",
         len(solutions),
         len(valid),
         valid_percentage,
@@ -72,7 +69,7 @@ def evaluate_c(
 
 
 if __name__ == "__main__":
-    result = evaluate_c(seconds=10)
+    result = evaluate_csv(seconds=10)
     print(
         f"Type: {result[0]}, "
         f"Solutions: {result[1]}, "

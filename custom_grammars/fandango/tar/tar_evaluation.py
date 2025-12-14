@@ -3,38 +3,31 @@ from pathlib import Path
 import subprocess
 import tempfile
 import time
-import shutil
 
 from fandango.evolution.algorithm import Fandango, LoggerLevel
 from fandango.language.parse import parse
 
 
-def is_syntactically_valid_c(c_string: str):
-    try:
-        clang = shutil.which("clang")
-        if not clang:
+def is_syntactically_valid_tar(tree: str):
+    with tempfile.NamedTemporaryFile(suffix=".tar") as outfile:
+        outfile.write(tree.encode())
+        outfile.flush()
+        cmd = ["bsdtar", "-tf", outfile.name]
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = process.communicate(timeout=10)
+        exit_code = process.wait()
+
+        if exit_code == 0:
+            return True
+        else:
             return False
-        
-        with tempfile.TemporaryDirectory() as td:
-            c_path = Path(td) / "prog.c"
-            c_path.write_text(c_string, encoding="utf-8", errors="ignore")
-
-            proc = subprocess.run(
-                [clang, "-fsyntax-only", str(c_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
-            )
-            return proc.returncode == 0
-    except Exception:
-        return False
 
 
-def evaluate_c(
+def evaluate_tar(
     seconds=60,
 ) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
     here = Path(__file__).resolve().parent
-    file_path = os.path.join(here, "c.fan")
+    file_path = os.path.join(here, "tar.fan")
     with open(file_path, "r") as file:
         grammar, constraints = parse(file, use_stdlib=False)
         assert grammar is not None
@@ -54,14 +47,14 @@ def evaluate_c(
 
     valid = []
     for solution in solutions:
-        if is_syntactically_valid_c(str(solution)):
+        if is_syntactically_valid_tar(str(solution)):
             valid.append(solution)
 
     set_mean_length = sum(len(str(x)) for x in valid) / len(valid)
     set_medium_length = sorted(len(str(x)) for x in valid)[len(valid) // 2]
     valid_percentage = len(valid) / len(solutions) * 100
     return (
-        "C",
+        "TAR",
         len(solutions),
         len(valid),
         valid_percentage,
@@ -72,7 +65,7 @@ def evaluate_c(
 
 
 if __name__ == "__main__":
-    result = evaluate_c(seconds=10)
+    result = evaluate_tar(seconds=10)
     print(
         f"Type: {result[0]}, "
         f"Solutions: {result[1]}, "

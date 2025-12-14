@@ -3,13 +3,13 @@ import random
 import sys
 from typing import Optional
 
-from csv.csv_evaluation import evaluate_csv
-from rest.rest_evaluation import evaluate_rest
-from tar.tar_evaluation import evaluate_tar
-from xml.xml_evaluation import evaluate_xml
+from csv_test.csv_evaluation import evaluate_csv
+from rest_test.rest_evaluation import evaluate_rest
+from tar_test.tar_evaluation import evaluate_tar
+from xml_test.xml_evaluation import evaluate_xml
 from c.c_evaluation import evaluate_c
-from dns.dns_evaluation import evaluate_dns
-from json.json_evaluation import evaluate_json
+from dns_test.dns_evaluation import evaluate_dns
+from json_test.json_evaluation import evaluate_json
 from fandango.logger import LOGGER
 
 LOGGER.setLevel(logging.WARNING)  # Default
@@ -50,9 +50,9 @@ def run_evaluation(time: Optional[str] = "3600"):
     better_print_results(evaluate_rest(seconds))
     better_print_results(evaluate_tar(seconds))
     better_print_results(evaluate_xml(seconds))
-    better_print_results(evaluate_c(seconds))
-    better_print_results(evaluate_dns(seconds))
-    better_print_results(evaluate_json(seconds))
+    # better_print_results(evaluate_c(seconds))
+    # better_print_results(evaluate_dns(seconds))
+    # better_print_results(evaluate_json(seconds))
 
 
 if __name__ == "__main__":

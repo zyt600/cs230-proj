@@ -1,5 +1,7 @@
 import csv
 import io
+import os
+from pathlib import Path
 import time
 from io import StringIO
 
@@ -30,7 +32,9 @@ def is_syntactically_valid_dns(dns_string: str, origin: str = "example.com"):
 def evaluate_dns(
     seconds=60,
 ) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
-    with open("evaluation/dns/dns.fan", "r") as file:
+    here = Path(__file__).resolve().parent
+    file_path = os.path.join(here, "dns.fan")
+    with open(file_path, "r") as file:
         grammar, constraints = parse(file, use_stdlib=False)
         assert grammar is not None
 

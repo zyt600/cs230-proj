@@ -1,40 +1,41 @@
 import os
 from pathlib import Path
-import subprocess
-import tempfile
 import time
-import shutil
+from io import StringIO
+
+from docutils.core import publish_doctree
 
 from fandango.evolution.algorithm import Fandango, LoggerLevel
 from fandango.language.parse import parse
 
 
-def is_syntactically_valid_c(c_string: str):
-    try:
-        clang = shutil.which("clang")
-        if not clang:
-            return False
-        
-        with tempfile.TemporaryDirectory() as td:
-            c_path = Path(td) / "prog.c"
-            c_path.write_text(c_string, encoding="utf-8", errors="ignore")
+def is_syntactically_valid_rest(rst_string):
+    # StringIO to capture output messages (warnings, errors, etc.)
+    error_stream = StringIO()
 
-            proc = subprocess.run(
-                [clang, "-fsyntax-only", str(c_path)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
-            )
-            return proc.returncode == 0
+    try:
+        # Parse the reST string into a document tree, capturing system messages
+        doctree = publish_doctree(
+            rst_string, settings_overrides={"warning_stream": error_stream}
+        )
+
+        # Check if any errors or warnings were captured in the error stream
+        errors_warnings = error_stream.getvalue().strip()
+
+        if errors_warnings:
+            return False
+
+        return True
+
     except Exception:
         return False
 
 
-def evaluate_c(
+def evaluate_rest(
     seconds=60,
 ) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
     here = Path(__file__).resolve().parent
-    file_path = os.path.join(here, "c.fan")
+    file_path = os.path.join(here, "rest.fan")
     with open(file_path, "r") as file:
         grammar, constraints = parse(file, use_stdlib=False)
         assert grammar is not None
@@ -54,14 +55,14 @@ def evaluate_c(
 
     valid = []
     for solution in solutions:
-        if is_syntactically_valid_c(str(solution)):
+        if is_syntactically_valid_rest(str(solution)):
             valid.append(solution)
 
     set_mean_length = sum(len(str(x)) for x in valid) / len(valid)
     set_medium_length = sorted(len(str(x)) for x in valid)[len(valid) // 2]
     valid_percentage = len(valid) / len(solutions) * 100
     return (
-        "C",
+        "REST",
         len(solutions),
         len(valid),
         valid_percentage,
@@ -72,7 +73,7 @@ def evaluate_c(
 
 
 if __name__ == "__main__":
-    result = evaluate_c(seconds=10)
+    result = evaluate_rest(seconds=10)
     print(
         f"Type: {result[0]}, "
         f"Solutions: {result[1]}, "

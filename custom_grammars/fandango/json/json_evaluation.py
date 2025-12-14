@@ -1,6 +1,8 @@
 import csv
 import io
 import json
+import os
+from pathlib import Path
 import time
 from io import StringIO
 
@@ -19,7 +21,9 @@ def is_syntactically_valid_json(json_string: str):
 def evaluate_json(
     seconds=60,
 ) -> tuple[str, int, int, float, tuple[float, int, int], float, float]:
-    with open("evaluation/json/json.fan", "r") as file:
+    here = Path(__file__).resolve().parent
+    file_path = os.path.join(here, "json.fan")
+    with open(file_path, "r") as file:
         grammar, constraints = parse(file, use_stdlib=False)
         assert grammar is not None
 
