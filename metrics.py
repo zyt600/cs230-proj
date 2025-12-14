@@ -8,6 +8,9 @@ import os
 # Adding DNS to ProGRMR:
 # Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
 
+def _add_custom_domains_to_fandango(fandango_repo_dir: str) -> None:
+    pass
+
 def _run_fandango_diversity(
         fandango_dir: str,
         output_dir: str,
@@ -102,6 +105,11 @@ def _run_progrmr_script(
 
     if result.returncode != 0:
         raise RuntimeError(f"{script_name} failed with exit code {result.returncode}")
+    
+PROGRMR_CUSTOM_DOMAINS = ["DNS", "TAR"]
+
+def _add_custom_domains_to_progrmr(progrmr_repo_dir: str) -> None:
+    pass
     
 def _run_progrmr_throughput(
     progrmr_repo_dir: str,

@@ -6,3 +6,4 @@ seaborn
 textdistance
 tqdm
 click
+dnspython
