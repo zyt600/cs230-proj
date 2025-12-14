@@ -46,11 +46,11 @@ def run_evaluation(time: Optional[str] = "3600"):
     # Set the random seed
     random.seed(random_seed)
 
-    better_print_results(evaluate_csv(seconds))
-    better_print_results(evaluate_rest(seconds))
-    better_print_results(evaluate_tar(seconds))
-    better_print_results(evaluate_xml(seconds))
-    # better_print_results(evaluate_c(seconds))
+    # better_print_results(evaluate_csv(seconds))
+    # better_print_results(evaluate_rest(seconds))
+    # better_print_results(evaluate_tar(seconds))
+    # better_print_results(evaluate_xml(seconds))
+    better_print_results(evaluate_c(seconds))
     # better_print_results(evaluate_dns(seconds))
     # better_print_results(evaluate_json(seconds))
 

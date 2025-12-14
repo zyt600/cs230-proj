@@ -56,7 +56,7 @@ PROGRMR_DIR="$PROGRMR_REPO_DIR/evaluation/progrmr"
 ISLA_DIR="$PROGRMR_REPO_DIR/isla"
 GRAMMATINATOR_DIR="$PROGRMR_REPO_DIR/grammarinator"
 OUTPUT="$OUTPUT_BASE_DIR/throughput.txt"
-LOG="output.txt"
+LOG="$OUTPUT_BASE_DIR/output.txt"
 GRAMMARINATOR_OUTPUT="%d.txt"
 mkdir -p $EVAL_DIR
 echo "-----" >> $OUTPUT
