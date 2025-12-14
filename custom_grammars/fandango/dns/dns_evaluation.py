@@ -42,6 +42,7 @@ def evaluate_dns(
 
     time_in_an_hour = time.time() + seconds
 
+    print("Generating DNS solutions...")
     fandango = Fandango(grammar, constraints, logger_level=LoggerLevel.ERROR)
     fan_gen = fandango.generate()
     for solution in fan_gen:
@@ -49,6 +50,7 @@ def evaluate_dns(
         if time.time() >= time_in_an_hour:
             break
 
+    print("Generating coverage...")
     coverage = grammar.compute_grammar_coverage(solutions, 4)
 
     valid = []

@@ -1,0 +1,30 @@
+start: json;
+
+json : value;
+
+value :
+    json_obj 
+    | lst
+    | strng
+    | integer (len(integer[0]) <= 5)
+    | boolean;
+
+json_obj : {new KEYS = set() } '{' key_values '}' | '{}';
+
+key_values: pair | pair ', ' key_values;
+
+pair : key ':' value (key[0] not in KEYS) {KEYS.add(key[0])};
+
+key : strng;
+
+strng : '"' chars (len(chars[0]) <= 5) '"';
+
+chars : [regex("[A-Za-z0-9]+")];
+
+lst : '[' values ']' | '[]';
+
+values: value ', ' values | value;
+
+integer: [regex("[0-9]|[1-9][0-9]+")];
+
+boolean: 'true' | 'false';

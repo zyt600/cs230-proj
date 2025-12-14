@@ -200,7 +200,7 @@ def _run_progrmr_script(
     if result.returncode != 0:
         raise RuntimeError(f"{script_name} failed with exit code {result.returncode}")
     
-PROGRMR_CUSTOM_DOMAINS = ["DNS", "TAR"]
+PROGRMR_CUSTOM_DOMAINS = ["DNS", "TAR", "JSON"]
 
 def _add_custom_domains_to_progrmr(progrmr_repo_dir: str) -> None:
     progrmr_repo_dir = os.path.abspath(progrmr_repo_dir)

@@ -77,21 +77,28 @@ def unseen_ips(zone):
 <ws> ::= ' ';
 
 <digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+<nonzero_digit> ::= '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+<digit_0_4> ::= '0' | '1' | '2' | '3' | '4';
+<digit_0_5> ::= '0' | '1' | '2' | '3' | '4' | '5';
 
 <ttl> ::= '3600' | '7200' | '14400' | '86400';
-<serial> ::= '202' <year> <month> <day> <two_digits>;
-<year> ::= '3' | '4' | '5';
-<month> ::= '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12';
-<day> ::= '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18' | '19' | '20' | '21' | '22' | '23' | '24' | '25' | '26' | '27' | '28' | '29' | '30' | '31';
-<two_digits> ::= <digit> <digit>;
-
+<serial>::= '2024111497';
 <refresh> ::= '1200' | '3600' | '7200' | '14400';
 <retry>   ::= '180' | '300' | '600' | '900';
 <expire>  ::= '604800' | '1209600' | '2419200';
 <minimum> ::= '60' | '180' | '300' | '3600';
 
-<ipv4> ::= r"((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\x2e){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])";
+<ipv4> ::= <octet> '.' <octet> '.' <octet> '.' <octet>
+<octet> ::= <nonzero_digit> | <nonzero_digit> <digit> | '1' <digit> <digit> | '2' <digit_0_4> <digit> | '25' <digit_0_5>
 
-<ipv6> ::= r"([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}";
+<ipv6> ::= <h16> ':' <h16> ':' <h16> ':' <h16> ':' <h16> ':' <h16> ':' <h16> ':' <h16>
+<h16> ::= <hex1> | <hex2> | <hex3> | <hex4>
+<hex1> ::= <hex_digit>
+<hex2> ::= <hex_digit> <hex_digit>
+<hex3> ::= <hex_digit> <hex_digit> <hex_digit>
+<hex4> ::= <hex_digit> <hex_digit> <hex_digit> <hex_digit>
+
+<hex_digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+
 
 where valid_ns_name(str(<mname>), str(<ns_record>)) and valid_timeout_conditions(int(<refresh>), int(<retry>), int(<expire>)) and unseen_ips(str(<zone>)) and valid_glue_record(str(<mname>), str(<glue_record>))

@@ -1,75 +1,67 @@
-<start> ::= <json>;
+<start> ::= <json>
 
-<json> ::= <value>;
+<json> ::= <value>
 
-<value> ::= <json_obj> | <list> | <string> | <integer> | <boolean>;
+<value> ::= <json_obj> | <list> | <string> | <integer> | <boolean>
 
-# ----- Objects -----
-# Keep <key_values> present (possibly empty) so constraints can always reference it.
-<json_obj> ::= '{' <ws_opt> <key_values> <ws_opt> '}';
+<json_obj> ::= '{' <ws_opt> <key_values> <ws_opt> '}'
 
-<key_values> ::= '' | <pair> | <pair> <ws_opt> ',' <ws_opt> <key_values>;
+<key_values> ::= '' | <pair> | <pair> <ws_opt> ',' <ws_opt> <key_values>
 
-<pair> ::= <key> <ws_opt> ':' <ws_opt> <value>;
+<pair> ::= <key> <ws_opt> ':' <ws_opt> <value>
 
-<key> ::= <string>;
+<key> ::= <string>
 
-# ----- Strings -----
-# Quoted lowercase strings with 1..7 letters (constraint also enforces this).
-<string> ::= '"' <letters> '"';
-<letters> ::= <ascii_lowercase_letter> | <ascii_lowercase_letter> <letters>;
+<string> ::= '"' <letters> '"'
 
-# ----- Lists -----
-<list> ::= '[' <ws_opt> <values_opt> <ws_opt> ']';
-<values_opt> ::= '' | <values>;
-<values> ::= <value> | <value> <ws_opt> ',' <ws_opt> <values>;
+<letters> ::= <l1> | <l2> | <l3> | <l4> | <l5> | <l6> | <l7>
+<l1> ::= <ascii_lowercase_letter>
+<l2> ::= <l1> <ascii_lowercase_letter>
+<l3> ::= <l2> <ascii_lowercase_letter>
+<l4> ::= <l3> <ascii_lowercase_letter>
+<l5> ::= <l4> <ascii_lowercase_letter>
+<l6> ::= <l5> <ascii_lowercase_letter>
+<l7> ::= <l6> <ascii_lowercase_letter>
 
-# ----- Booleans / Integers -----
-<boolean> ::= 'true' | 'false';
+<list> ::= '[' <ws_opt> <values_opt> <ws_opt> ']'
 
-<integer> ::= <digits>;
-<digits> ::= <digit> | <digit> <digits>;
+<values_opt> ::= '' | <values>
 
-# ----- Whitespace -----
-<ws_opt> ::= '' | ' ';
+<values> ::= <value> | <value> <ws_opt> ',' <ws_opt> <values>
 
-# ----- Character classes -----
-<ascii_lowercase_letter> ::= 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z';
-<digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+<boolean> ::= 'true' | 'false'
 
-# ------------------------------------------------------------
-# Constraints:
-# 1) Keys within each object are unique
-# 2) String length (letters only) <= 7
-# 3) Integer digit-length <= 5
-# ------------------------------------------------------------
-where unique_keys(<key_values>) and (len(str(<string>)) - 2) <= 7 and len(str(<integer>)) <= 5
+<integer> ::= <digits>
 
+<digits> ::= <d1> | <d2> | <d3> | <d4> | <d5>
+<d1> ::= <digit>
+<d2> ::= <d1> <digit>
+<d3> ::= <d2> <digit>
+<d4> ::= <d3> <digit>
+<d5> ::= <d4> <digit>
+
+<ascii_lowercase_letter> ::= 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z'
+
+<digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+
+<ws_opt> ::= '' | ' '
+
+where unique_keys(<key_values>)
 
 def unique_keys(key_values):
-    """
-    Returns True iff all <key> occurrences inside this <key_values> subtree are unique.
-    Works even when <key_values> is empty ('').
-    """
-
-    def all_keys(tree):
+    def collect_keys(tree):
         if tree is None:
             return []
-
         if tree.is_non_terminal:
-            # Only collect keys; ignore values
             if tree.symbol.name() == "<key>":
                 return [str(tree)]
-
             if tree.symbol.name() == "<value>":
                 return []
-
-            keys = []
+            out = []
             for child in tree._children:
-                keys.extend(all_keys(child))
-            return keys
-
+                out.extend(collect_keys(child))
+            return out
         return []
 
-    keys_in_obj = all_keys(key_values)
-    return len(keys_in_obj) == len(set(keys_in_obj))
+    keys = collect_keys(key_values)
+    return len(keys) == len(set(keys))
