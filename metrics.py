@@ -2,14 +2,51 @@ import argparse
 import subprocess
 import sys
 import os
+import shutil
 
 # NOTE: to add a new domain, you will have to add its grammar to each repo's respective evaluation domain directories:
 
 # Adding DNS to ProGRMR:
 # Create the folder progrmr-anon/evaluation/progrmr/DNS, and add the grammar file DNS.pg there
 
+FANDANGO_CUSTOM_DOMAINS = ["c", "dns", "json"]
+
 def _add_custom_domains_to_fandango(fandango_repo_dir: str) -> None:
-    pass
+    fandango_repo_dir = os.path.abspath(fandango_repo_dir)
+    fandango_evaluation_dir = os.path.join(fandango_repo_dir, "evaluation")
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    custom_grammars_path = os.path.join(cur_dir, "custom_grammars", "fandango")
+
+    for domain in FANDANGO_CUSTOM_DOMAINS:
+        # Copy custom grammars and checkers to Fandango
+        domain_path = os.path.join(custom_grammars_path, domain)
+        fandango_evaluation_domain_dir = os.path.join(fandango_evaluation_dir, domain)
+        os.makedirs(fandango_evaluation_domain_dir, exist_ok=True)
+        shutil.copytree(domain_path, fandango_evaluation_domain_dir, dirs_exist_ok=True)
+    
+    # Copy acceptance checker runner
+    main_path = os.path.join(custom_grammars_path, "run_evaluation.py")
+    shutil.copy2(main_path, fandango_evaluation_dir)
+    
+def _run_fandango_evaluation(
+        fandango_dir: str,
+        output_dir: str,
+        timeout: int = 100
+):
+    stdout_path = os.path.join(output_dir, "fandango_evaluation.txt")
+    stderr_path = os.path.join(output_dir, "fandango_evaluation_err.txt")
+
+    with open(stdout_path, "w") as out, open(stderr_path, "w") as err:
+        run_evaluation_path = os.path.join(fandango_dir, "evaluation", "run_evaluation.py")
+        cmd = ["python3", run_evaluation_path, timeout]
+        subprocess.run(
+            cmd,
+            stdout=out,
+            stderr=err,
+            text=True,
+            check=True
+        )
 
 def _run_fandango_diversity(
         fandango_dir: str,
@@ -109,7 +146,28 @@ def _run_progrmr_script(
 PROGRMR_CUSTOM_DOMAINS = ["DNS", "TAR"]
 
 def _add_custom_domains_to_progrmr(progrmr_repo_dir: str) -> None:
-    pass
+    progrmr_repo_dir = os.path.abspath(progrmr_repo_dir)
+    progrmr_evaluation_dir = os.path.join(progrmr_repo_dir, "evaluation")
+    progrmr_evaluation_acceptance_dir = os.path.join(progrmr_evaluation_dir, "acceptance_checkers")
+    progrmr_evaluation_grammars_dir = os.path.join(progrmr_evaluation_dir, "progrmr")
+
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    custom_grammars_path = os.path.join(cur_dir, "custom_grammars", "progrmr")
+
+    for domain in PROGRMR_CUSTOM_DOMAINS:
+        # Copy custom acceptance checker to ProGRMR's acceptance checker dir
+        domain_checker_path = os.path.join(custom_grammars_path, domain, f"{domain}.py")
+        shutil.copy2(domain_checker_path, progrmr_evaluation_acceptance_dir)
+
+        # Copy custom grammar to ProGRMR's grammar dir
+        domain_grammar_path = os.path.join(custom_grammars_path, domain, f"{domain}.pg")
+        os.makedirs(os.path.join(progrmr_evaluation_grammars_dir, domain), exist_ok=True)
+        shutil.copy2(domain_grammar_path, os.path.join(progrmr_evaluation_grammars_dir, domain))
+
+    # Copy acceptance checker runner
+    main_path = os.path.join(custom_grammars_path, "main.py")
+    shutil.copy2(main_path, progrmr_evaluation_acceptance_dir)
+
     
 def _run_progrmr_throughput(
     progrmr_repo_dir: str,
@@ -189,15 +247,20 @@ def main(args):
         '-f',
         '--fandango_dir',
         type=str,
-        required=True,
         help='Directory containing Fandango repository.'
+    )
+
+    parser.add_argument(
+        '-r',
+        '--run_fandango_eval',
+        action='store_true',
+        help='Run full Fandango evaluation over all grammars.'
     )
 
     parser.add_argument(
         '-p',
         '--progrmr_dir',
         type=str,
-        required=True,
         help='Directory containing ProGRMR repository.'
     )
 
@@ -228,6 +291,9 @@ def main(args):
 
     args = parser.parse_args(args)
 
+    if not args.fandango_dir and not args.progrmr_dir:
+        raise ValueError("Either Fandango or ProGRMR repo directories must be provided.")
+
     domain = args.domain
 
     # append progrmr_metrics and fandango_metrics directories to output_dir
@@ -236,35 +302,47 @@ def main(args):
     os.makedirs(progrmr_output_dir, exist_ok=True)
     os.makedirs(fandango_output_dir, exist_ok=True)
 
-    print("\nGenerating Fandango metrics:\n")
-    _run_fandango_diversity(args.fandango_dir, fandango_output_dir, domain, args.timeout)
+    print(f"Processing domain: {domain}")
 
-    print(f"\nProcessing domain: {domain}")
-    print("\nGenerating ProGRMR throughput metrics:\n")
-    # _run_progrmr_throughput(
-    #     progrmr_repo_dir=args.progrmr_dir,
-    #     output_dir=progrmr_output_dir,
-    #     domain=domain,
-    #     timeout=args.timeout,
-    #     mode="gf",
-    #     programs="p",
-    # )
+    if args.fandango_dir:
+        print("\nCopying custom grammars to Fandango repo\n")
+        _add_custom_domains_to_fandango(args.fandango_dir)
 
-    # print("\nGenerating ProGRMR wellformedness metrics:\n")
-    # # _run_progrmr_wellformedness(
-    # #     progrmr_repo_dir=args.progrmr_dir,
-    # #     output_dir=progrmr_output_dir,
-    # #     domain=domain,
-    # #     programs="p",
-    # #     show_failures=True,
-    # # )
+        if args.run_fandango_eval:
+            _run_fandango_evaluation(args.fandango_dir, fandango_output_dir, args.timeout)
 
-    # print("\nGenerating ProGRMR diversity metrics:\n")
-    # _run_progrmr_diversity(
-    #     progrmr_repo_dir=args.progrmr_dir,
-    #     output_dir=progrmr_output_dir,
-    #     domain=domain,
-    # )
+        print("\nGenerating Fandango diversity:\n")
+        _run_fandango_diversity(args.fandango_dir, fandango_output_dir, domain, args.timeout)
+
+    
+    if args.progrmr_dir:
+        print("\nCopying custom grammars to ProGRMR repo")
+        _add_custom_domains_to_progrmr(args.progrmr_dir)
+        print("\nGenerating ProGRMR throughput metrics:\n")
+        # _run_progrmr_throughput(
+        #     progrmr_repo_dir=args.progrmr_dir,
+        #     output_dir=progrmr_output_dir,
+        #     domain=domain,
+        #     timeout=args.timeout,
+        #     mode="gf",
+        #     programs="p",
+        # )
+
+        # print("\nGenerating ProGRMR wellformedness metrics:\n")
+        # # _run_progrmr_wellformedness(
+        # #     progrmr_repo_dir=args.progrmr_dir,
+        # #     output_dir=progrmr_output_dir,
+        # #     domain=domain,
+        # #     programs="p",
+        # #     show_failures=True,
+        # # )
+
+        # print("\nGenerating ProGRMR diversity metrics:\n")
+        # _run_progrmr_diversity(
+        #     progrmr_repo_dir=args.progrmr_dir,
+        #     output_dir=progrmr_output_dir,
+        #     domain=domain,
+        # )
 
 
 if __name__ == "__main__":
